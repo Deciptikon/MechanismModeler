@@ -34,6 +34,8 @@ class Element(QObject):
         return self._color
 
 class MechanismDesigner(QObject):
+    elementsChanged = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._elements = []
@@ -44,8 +46,23 @@ class MechanismDesigner(QObject):
 
     @pyqtSlot(str)
     def addElement(self, element_type):
-        element = Element(element_type, 100, 100, 0, QColor("blue"))
-        self._elements.append(element)
+        if element_type == "Link":
+            qml_file = "qml/Link/Link.qml"
+        elif element_type == "Joint":
+            qml_file = "qml/Joint/Joint.qml"
+        elif element_type == "Motor":
+            qml_file = "qml/Motor/Motor.qml"
+        else:
+            return
+
+        self._elements.append({
+            'type': element_type,
+            'qml_file': qml_file,
+            'x': 100,
+            'y': 100,
+            'rotation': 0,
+            'color': "blue" if element_type == "Link" else "red" if element_type == "Joint" else "green"
+        })
         self.elementsChanged.emit()
 
     @pyqtSlot(QPointF)
@@ -61,15 +78,13 @@ class MechanismDesigner(QObject):
     def design(self):
         print("Designing Mechanism...")
 
-    elementsChanged = pyqtSignal()
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     engine = QQmlApplicationEngine()
     designer = MechanismDesigner()
     engine.rootContext().setContextProperty("designer", designer)
-    engine.load('main.qml')
+    engine.load('qml/main.qml')
 
     if not engine.rootObjects():
         sys.exit(-1)
